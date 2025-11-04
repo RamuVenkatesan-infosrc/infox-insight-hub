@@ -1,4 +1,4 @@
-import { Shield, Bug, Moon, Sun } from "lucide-react";
+import { Shield, Bug, Upload, Moon, Sun } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import {
   Sidebar,
@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button";
 const menuItems = [
   { title: "Dashboard", url: "/", icon: Shield },
   { title: "Findings", url: "/findings", icon: Bug },
+  { title: "Upload", url: "/upload", icon: Upload },
 ];
 
 export function AppSidebar() {
