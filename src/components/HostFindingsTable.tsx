@@ -10,7 +10,15 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ChevronLeft, ChevronRight, Search } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { ChevronLeft, ChevronRight, Search, ExternalLink } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
 
 interface Finding {
   hostFindings: string;
@@ -55,6 +63,7 @@ const getSeverityColor = (severity: string) => {
 export function HostFindingsTable({ data }: HostFindingsTableProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [selectedFinding, setSelectedFinding] = useState<Finding | null>(null);
   const itemsPerPage = 10;
 
   const filteredData = data.filter(
@@ -103,7 +112,11 @@ export function HostFindingsTable({ data }: HostFindingsTableProps) {
           </TableHeader>
           <TableBody>
             {paginatedData.map((finding, index) => (
-              <TableRow key={index} className="hover:bg-muted/50 cursor-pointer">
+              <TableRow 
+                key={index} 
+                className="hover:bg-muted/50 cursor-pointer"
+                onClick={() => setSelectedFinding(finding)}
+              >
                 <TableCell className="font-medium">{finding.hostFindings}</TableCell>
                 <TableCell>
                   <Badge variant="outline">{finding.vrrScore}</Badge>
@@ -155,6 +168,152 @@ export function HostFindingsTable({ data }: HostFindingsTableProps) {
           </Button>
         </div>
       </div>
+
+      {/* Detail Dialog */}
+      <Dialog open={!!selectedFinding} onOpenChange={() => setSelectedFinding(null)}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-2xl flex items-center gap-3">
+              {selectedFinding?.vulnerabilityName}
+              <Badge className={getSeverityColor(selectedFinding?.scannerSeverity || "")}>
+                {selectedFinding?.scannerSeverity}
+              </Badge>
+            </DialogTitle>
+            <DialogDescription className="text-base">
+              {selectedFinding?.description}
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedFinding && (
+            <div className="space-y-6 mt-4">
+              {/* Basic Information */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <h4 className="font-semibold text-sm text-muted-foreground mb-1">Host</h4>
+                  <p className="text-foreground">{selectedFinding.hostFindings}</p>
+                </div>
+                <div>
+                  <h4 className="font-semibold text-sm text-muted-foreground mb-1">IP Address</h4>
+                  <p className="font-mono text-sm text-foreground">{selectedFinding.ipAddress}</p>
+                </div>
+                <div>
+                  <h4 className="font-semibold text-sm text-muted-foreground mb-1">VRR Score</h4>
+                  <Badge variant="outline" className="text-base">{selectedFinding.vrrScore}</Badge>
+                </div>
+                <div>
+                  <h4 className="font-semibold text-sm text-muted-foreground mb-1">Status</h4>
+                  <Badge variant={selectedFinding.status === "Open" ? "destructive" : "secondary"}>
+                    {selectedFinding.status}
+                  </Badge>
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Scanner Information */}
+              <div>
+                <h3 className="font-bold text-lg mb-3">Scanner Information</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <h4 className="font-semibold text-sm text-muted-foreground mb-1">Scanner Name</h4>
+                    <p className="text-foreground">{selectedFinding.scannerName}</p>
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-sm text-muted-foreground mb-1">Plugin ID</h4>
+                    <p className="font-mono text-sm text-foreground">{selectedFinding.scannerPluginID}</p>
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-sm text-muted-foreground mb-1">Port / Protocol</h4>
+                    <p className="text-foreground">{selectedFinding.port} / {selectedFinding.protocol}</p>
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-sm text-muted-foreground mb-1">Reported Severity</h4>
+                    <Badge className={getSeverityColor(selectedFinding.scannerReportedSeverity)}>
+                      {selectedFinding.scannerReportedSeverity}
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Plugin Output */}
+              <div>
+                <h3 className="font-bold text-lg mb-2">Plugin Output</h3>
+                <div className="bg-muted p-4 rounded-lg font-mono text-sm text-foreground">
+                  {selectedFinding.pluginOutput}
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Threat Information */}
+              <div>
+                <h3 className="font-bold text-lg mb-2">Threat</h3>
+                <p className="text-foreground bg-destructive/10 p-4 rounded-lg border border-destructive/20">
+                  {selectedFinding.threat}
+                </p>
+              </div>
+
+              <Separator />
+
+              {/* Solutions and Patches */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <h3 className="font-bold text-lg mb-2">Possible Solutions</h3>
+                  <p className="text-foreground bg-muted p-4 rounded-lg">
+                    {selectedFinding.possibleSolutions}
+                  </p>
+                </div>
+                <div>
+                  <h3 className="font-bold text-lg mb-2">Possible Patches</h3>
+                  <div className="bg-muted p-4 rounded-lg">
+                    {selectedFinding.possiblePatches.startsWith('http') ? (
+                      <a
+                        href={selectedFinding.possiblePatches}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-primary hover:underline flex items-center gap-2"
+                      >
+                        View Patch Information
+                        <ExternalLink className="h-4 w-4" />
+                      </a>
+                    ) : (
+                      <p className="text-foreground">{selectedFinding.possiblePatches}</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* CVEs and Weaknesses */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <h3 className="font-bold text-lg mb-2">Vulnerabilities (CVEs)</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedFinding.vulnerabilities.map((cve, idx) => (
+                      <Badge key={idx} variant="outline" className="font-mono">
+                        {cve}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <h3 className="font-bold text-lg mb-2">Weaknesses (CWEs)</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedFinding.weaknesses.map((cwe, idx) => (
+                      <Badge key={idx} variant="outline" className="text-xs">
+                        {cwe}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

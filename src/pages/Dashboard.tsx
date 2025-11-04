@@ -1,5 +1,6 @@
 import { GaugeChart } from "@/components/GaugeChart";
 import { OverviewCards } from "@/components/OverviewCards";
+import { FindingsFunnel } from "@/components/FindingsFunnel";
 import { mockData } from "@/data/mockData";
 
 export default function Dashboard() {
@@ -24,6 +25,9 @@ export default function Dashboard() {
         <h2 className="text-2xl font-bold text-foreground mb-4">Findings Overview</h2>
         <OverviewCards data={mockData.findingsSummary} />
       </div>
+
+      {/* Open Findings by Severity */}
+      <FindingsFunnel data={mockData.severityDistribution} />
     </div>
   );
 }
